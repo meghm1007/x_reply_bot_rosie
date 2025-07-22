@@ -9,45 +9,49 @@ const { saveRepliedTweet, hasRepliedToTweet } = require(path.join(srcPath, 'pers
 
 // Add Rosebud AI link to the game prompt (same as in bot.js)
 function addRosebudLink(gamePrompt) {
-  // Create a URL with the prompt pre-filled
+  // Create a URL with the prompt pre-filled (correct format with /)
   const encodedPrompt = encodeURIComponent(gamePrompt);
-  const rosebudUrl = `https://rosebud.ai?prompt=${encodedPrompt}`;
+  const rosebudUrl = `https://rosebud.ai/?prompt=${encodedPrompt}`;
   
   // Add the link to the prompt in a natural way
   const enhancedPrompt = `${gamePrompt}\n\n🎮 Build this game: ${rosebudUrl}`;
   
   // Make sure we don't exceed Twitter's character limit (280 chars)
   if (enhancedPrompt.length > 280) {
-    // If too long, use a shorter format
-    const shorterPrompt = `${gamePrompt}\n\n🎮 rosebud.ai`;
-    return shorterPrompt.length <= 280 ? shorterPrompt : gamePrompt;
+    // If too long, use a shorter format with correct URL
+    const shorterPrompt = `${gamePrompt}\n\n🎮 https://rosebud.ai/?prompt=${encodedPrompt}`;
+    if (shorterPrompt.length <= 280) {
+      return shorterPrompt;
+    }
+    // If still too long, use minimal format
+    return `${gamePrompt}\n\n🎮 rosebud.ai`;
   }
   
   return enhancedPrompt;
 }
 
-// Simulate real tweet mentions for testing (with fresh IDs)
+// Simulate real tweet mentions for testing (fresh IDs for new prompt style)
 const realTestMentions = [
   {
-    id: 'test_004',
-    text: '@MeghMehta160626 I love playing retro arcade games! What should I try next?',
-    author: { username: 'retrogamer', name: 'Retro Gaming Fan' },
-    created_at: '2024-01-15T16:00:00.000Z',
-    conversation_id: 'conv_004'
+    id: 'test_007',
+    text: '@MeghMehta160626 Love space exploration games! The mystery of the cosmos is fascinating.',
+    author: { username: 'spacefan', name: 'Space Explorer' },
+    created_at: '2024-01-15T19:00:00.000Z',
+    conversation_id: 'conv_007'
   },
   {
-    id: 'test_005', 
-    text: '@MeghMehta160626 Just got into board games! Any suggestions for beginners?',
-    author: { username: 'boardgamer', name: 'Board Game Newbie' },
-    created_at: '2024-01-15T17:00:00.000Z',
-    conversation_id: 'conv_005'
+    id: 'test_008', 
+    text: '@MeghMehta160626 Been reading about ancient civilizations lately. Egypt and Rome are so cool!',
+    author: { username: 'historybuff', name: 'History Enthusiast' },
+    created_at: '2024-01-15T20:00:00.000Z',
+    conversation_id: 'conv_008'
   },
   {
-    id: 'test_006',
-    text: '@MeghMehta160626 Building my first mobile app and need creative ideas!',
-    author: { username: 'appdeveloper', name: 'Mobile Dev' },
-    created_at: '2024-01-15T18:00:00.000Z',
-    conversation_id: 'conv_006'
+    id: 'test_009',
+    text: '@MeghMehta160626 Working on my cooking skills. Making pasta from scratch is harder than expected!',
+    author: { username: 'chefwannabe', name: 'Home Cook' },
+    created_at: '2024-01-15T21:00:00.000Z',
+    conversation_id: 'conv_009'
   }
 ];
 

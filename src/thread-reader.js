@@ -28,10 +28,10 @@ async function readFullThread(conversationId) {
     // Get all tweets in the conversation
     // This is like reading an entire thread from top to bottom
     const tweets = await client.v2.search(`conversation_id:${conversationId}`, {
-      max_results: parseInt(process.env.MAX_THREAD_LENGTH) || 10,
-      'tweet.fields': ['created_at', 'author_id', 'text', 'public_metrics'],
+      max_results: parseInt(process.env.MAX_THREAD_LENGTH) || 20, // Increased for better context
+      'tweet.fields': ['created_at', 'author_id', 'text', 'public_metrics', 'referenced_tweets'],
       'user.fields': ['username', 'name'],
-      expansions: ['author_id'],
+      expansions: ['author_id', 'referenced_tweets.id'],
       sort_order: 'chronological' // Oldest first for proper context
     });
 

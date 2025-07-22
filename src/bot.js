@@ -153,18 +153,22 @@ class RosebudBot {
 
   // Add Rosebud AI link to the game prompt
   addRosebudLink(gamePrompt) {
-    // Create a URL with the prompt pre-filled
+    // Create a URL with the prompt pre-filled (correct format with /)
     const encodedPrompt = encodeURIComponent(gamePrompt);
-    const rosebudUrl = `https://rosebud.ai?prompt=${encodedPrompt}`;
+    const rosebudUrl = `https://rosebud.ai/?prompt=${encodedPrompt}`;
     
     // Add the link to the prompt in a natural way
     const enhancedPrompt = `${gamePrompt}\n\n🎮 Build this game: ${rosebudUrl}`;
     
     // Make sure we don't exceed Twitter's character limit (280 chars)
     if (enhancedPrompt.length > 280) {
-      // If too long, use a shorter format
-      const shorterPrompt = `${gamePrompt}\n\n🎮 rosebud.ai`;
-      return shorterPrompt.length <= 280 ? shorterPrompt : gamePrompt;
+      // If too long, use a shorter format with correct URL
+      const shorterPrompt = `${gamePrompt}\n\n🎮 https://rosebud.ai/?prompt=${encodedPrompt}`;
+      if (shorterPrompt.length <= 280) {
+        return shorterPrompt;
+      }
+      // If still too long, use minimal format
+      return `${gamePrompt}\n\n🎮 rosebud.ai`;
     }
     
     return enhancedPrompt;

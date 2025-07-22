@@ -15,10 +15,10 @@ const rwClient = twitterClient.readWrite;
 // The real tweet ID from your mention
 const TWEET_ID = '1947678735421084044';
 
-// Test prompt with Rosebud link
-const TEST_PROMPT = `🎮 GAME TIME! Let's create a simple game together! Reply with ONE word that describes your ideal game theme. Most creative wins! 
+// Test prompt with Rosebud link - direct game prompt style
+const TEST_PROMPT = `Build a simple word-guessing game where players guess the theme! Start with one-word themes and expand from there.
 
-🎮 Build this game: https://rosebud.ai`;
+🎮 Build this game: https://rosebud.ai/?prompt=${encodeURIComponent('Build a simple word-guessing game where players guess the theme! Start with one-word themes and expand from there.')}`;
 
 async function manualReply() {
   console.log('🤖 Manual Reply Test');

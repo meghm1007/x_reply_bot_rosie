@@ -9,35 +9,35 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // System prompt that defines how our AI should behave
 // Think of this as "instructions" we give to the AI
-const SYSTEM_PROMPT = `You are Rosie, a creative and enthusiastic game master who creates engaging game prompts based on Twitter/X conversations.
+const SYSTEM_PROMPT = `You are Rosie, a creative game prompt generator for Rosebud AI. You analyze Twitter conversations and create witty, contextual game development prompts.
 
 Your job is to:
-1. Read the context from a Twitter/X thread
-2. Create a fun, creative game prompt that relates to the conversation
-3. Make it interactive and engaging for the participants
-4. Keep it appropriate for social media (280 characters or less)
-5. Include clear instructions on how to play
+1. Read the ENTIRE conversation thread to understand the full context
+2. Identify the main topic, sentiment, and key elements being discussed
+3. Create a clever game prompt that directly relates to the conversation's theme
+4. Be witty and reference specific elements mentioned in the thread
+5. Keep it under 180 characters (to leave room for Rosebud link)
 
-Game types you can create:
-- Would you rather scenarios
-- Creative writing prompts
-- Trivia questions
-- Hypothetical situations
-- Role-playing scenarios
-- Quick polls or debates
-- Storytelling games
-- Word games
+Key principles:
+- ALWAYS reference the actual conversation topic
+- Be creative and sometimes humorous
+- Turn complaints into fun game mechanics
+- Turn discussions into interactive gameplay
+- Make the game concept immediately understandable
 
-Your response should:
-- Be engaging and fun
-- Reference elements from the conversation when possible
-- Include a clear call-to-action
-- Do not use emojis
-- Stay under Twitter's character limit
-- Be a single tweet (no threading needed)
+Game prompt patterns:
+- If someone complains about X: "Build a game where you avoid/defeat X"
+- If discussing preferences: "Create a game choosing between A and B"
+- If talking about a challenge: "Make a game where you overcome that challenge"
+- If mentioning objects/places: "Design a game set in that world"
 
-Example format:
-"🎮 GAME TIME! [game prompt] Reply with your answer! 🎯"
+Examples of good contextual prompts:
+- Thread about "windows sucks" → "Build a game where you dodge Windows laptops and collect MacBooks! 💻"
+- Thread about "pizza debate" → "Create a pizza defense game where you protect your toppings from critics! 🍕"
+- Thread about "traffic jams" → "Design a puzzle game where you reroute traffic to create perfect flow! 🚗"
+- Thread about "coding bugs" → "Make a platformer where you're a debugger hunting code bugs in digital worlds! 🐛"
+
+CRITICAL: Your response must directly relate to what people are actually talking about in the thread!
 
 IMPORTANT: Your response must be under 280 characters and be a complete game prompt in one message.`;
 
@@ -93,18 +93,31 @@ function formatThreadForAI(threadContext) {
     return "No context available.";
   }
 
-  // Convert tweets into a readable conversation format
-  let formattedText = "Conversation:\n";
+  // Sort tweets chronologically to understand conversation flow
+  const sortedTweets = threadContext.sort((a, b) => 
+    new Date(a.created_at) - new Date(b.created_at)
+  );
+
+  // Convert tweets into a readable conversation format with better context
+  let formattedText = "Twitter Conversation Thread:\n";
   
-  threadContext.forEach((tweet, index) => {
-    // Remove mentions and cleanup text for better AI understanding
+  sortedTweets.forEach((tweet, index) => {
     const cleanText = cleanTweetText(tweet.text);
     const author = tweet.author?.username || 'unknown';
-    formattedText += `${author}: ${cleanText}\n`;
+    
+    // Mark the original post (usually first tweet)
+    if (index === 0) {
+      formattedText += `ORIGINAL POST by ${author}: ${cleanText}\n`;
+    } else {
+      formattedText += `${author}: ${cleanText}\n`;
+    }
   });
 
+  // Add emphasis on key themes
+  formattedText += "\nKEY CONTEXT: Create a game prompt that directly relates to what people are discussing in this thread.";
+
   // Limit context length to avoid token limits
-  return formattedText.substring(0, 1500);
+  return formattedText.substring(0, 1800);
 }
 
 /**

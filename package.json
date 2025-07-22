@@ -9,6 +9,8 @@
     "test": "node src/test.js",
     "test-env": "node scripts/check-env.js",
     "test-manual": "node scripts/manual-test.js",
+    "test-context": "node scripts/test-context.js",
+    "test-url": "node scripts/test-url-format.js",
     "debug": "node scripts/debug-bot.js",
     "setup": "echo Please copy env.example to .env and fill in your credentials"
   },
