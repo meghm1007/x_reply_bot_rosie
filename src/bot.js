@@ -43,36 +43,43 @@ class RosebudBot {
         }
       );
 
-      // Debug: Log the full response to understand what we're getting
-      console.log('🔍 Debug - API Response:', JSON.stringify(mentions, null, 2));
+      // Debug: Log the response structure
+      console.log('🔍 Debug - API Response type:', typeof mentions);
+      console.log('🔍 Debug - Has _realData:', mentions._realData ? 'YES' : 'NO');
+      
+      // Extract the actual data from the response
+      const actualData = mentions._realData || mentions;
+      const mentionsData = actualData.data;
+      const mentionsMeta = actualData.meta;
 
       // Better error handling for undefined or missing data
-      if (!mentions) {
-        console.log('❌ API returned no response');
+      if (!actualData) {
+        console.log('❌ API returned no response data');
         return;
       }
 
-      if (!mentions.data) {
+      if (!mentionsData) {
         console.log('📭 No mentions data in response (this might be normal if no mentions exist)');
-        console.log('📊 Response meta:', mentions.meta);
+        console.log('📊 Response meta:', mentionsMeta);
         return;
       }
 
-      if (!Array.isArray(mentions.data)) {
-        console.log('❌ Mentions data is not an array:', typeof mentions.data);
+      if (!Array.isArray(mentionsData)) {
+        console.log('❌ Mentions data is not an array:', typeof mentionsData);
+        console.log('🔍 Raw data:', mentionsData);
         return;
       }
 
-      if (mentions.data.length === 0) {
+      if (mentionsData.length === 0) {
         console.log('📭 No new mentions found');
         return;
       }
 
-      console.log(`📬 Found ${mentions.data.length} mentions`);
+      console.log(`📬 Found ${mentionsData.length} mentions`);
 
       // Process each mention
-      for (const mention of mentions.data) {
-        await this.processMention(mention);
+      for (const mention of mentionsData) {
+        await this.processMention(mention, actualData.includes);
       }
 
     } catch (error) {
@@ -89,7 +96,7 @@ class RosebudBot {
   }
 
   // Process individual mention
-  async processMention(mention) {
+  async processMention(mention, includes) {
     try {
       // Skip if we've already replied to this tweet
       if (await hasRepliedToTweet(mention.id)) {
@@ -97,11 +104,27 @@ class RosebudBot {
         return;
       }
 
-      console.log(`📝 Processing mention: "${mention.text}"`);
+      // Get author info from includes
+      const author = includes?.users?.find(user => user.id === mention.author_id);
+      const authorName = author ? `@${author.username}` : 'someone';
+      
+      console.log(`📝 Processing mention from ${authorName}: "${mention.text}"`);
 
-      // Read the full conversation thread
-      const threadContext = await readFullThread(mention.conversation_id);
-      console.log(`📖 Read thread with ${threadContext.length} tweets`);
+      // Try to read thread context, but fall back to minimal context if rate limited
+      let threadContext = [];
+      try {
+        threadContext = await readFullThread(mention.conversation_id);
+        console.log(`📖 Read thread with ${threadContext.length} tweets`);
+      } catch (threadError) {
+        console.log(`⚠️ Couldn't read full thread (${threadError.message}), using minimal context`);
+        // Create minimal context from just the mention
+        threadContext = [{
+          id: mention.id,
+          text: mention.text,
+          author: { username: author?.username || 'unknown', name: author?.name || 'Unknown' },
+          created_at: mention.created_at
+        }];
+      }
 
       // Generate a game prompt using AI
       const gamePrompt = await generateGamePrompt(threadContext);
@@ -111,8 +134,12 @@ class RosebudBot {
         return;
       }
 
+      // Add Rosebud AI link to the prompt
+      const enhancedPrompt = this.addRosebudLink(gamePrompt);
+      console.log(`✨ Enhanced prompt: "${enhancedPrompt}"`);
+
       // Reply to the mention
-      await this.replyToTweet(mention.id, gamePrompt);
+      await this.replyToTweet(mention.id, enhancedPrompt);
       
       // Save that we replied to avoid duplicates
       await saveRepliedTweet(mention.id);
@@ -122,6 +149,25 @@ class RosebudBot {
     } catch (error) {
       console.error(`❌ Error processing mention ${mention.id}:`, error);
     }
+  }
+
+  // Add Rosebud AI link to the game prompt
+  addRosebudLink(gamePrompt) {
+    // Create a URL with the prompt pre-filled
+    const encodedPrompt = encodeURIComponent(gamePrompt);
+    const rosebudUrl = `https://rosebud.ai?prompt=${encodedPrompt}`;
+    
+    // Add the link to the prompt in a natural way
+    const enhancedPrompt = `${gamePrompt}\n\n🎮 Build this game: ${rosebudUrl}`;
+    
+    // Make sure we don't exceed Twitter's character limit (280 chars)
+    if (enhancedPrompt.length > 280) {
+      // If too long, use a shorter format
+      const shorterPrompt = `${gamePrompt}\n\n🎮 rosebud.ai`;
+      return shorterPrompt.length <= 280 ? shorterPrompt : gamePrompt;
+    }
+    
+    return enhancedPrompt;
   }
 
   // Reply to a tweet with our game prompt

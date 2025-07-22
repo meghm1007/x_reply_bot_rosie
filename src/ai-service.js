@@ -32,13 +32,12 @@ Your response should:
 - Be engaging and fun
 - Reference elements from the conversation when possible
 - Include a clear call-to-action
-- Use emojis to make it visually appealing
+- Do not use emojis
 - Stay under Twitter's character limit
 - Be a single tweet (no threading needed)
 
-Example formats:
-"🎮 GAME TIME! Based on your chat about [topic]... [game prompt] Reply with your answer! 🎯"
-"🌟 Let's play! I see you're discussing [topic]... [creative scenario] What would you do? 🤔"
+Example format:
+"🎮 GAME TIME! [game prompt] Reply with your answer! 🎯"
 
 IMPORTANT: Your response must be under 280 characters and be a complete game prompt in one message.`;
 

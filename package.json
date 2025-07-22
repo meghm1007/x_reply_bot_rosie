@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node src/bot.js",
     "dev": "nodemon src/bot.js",
-    "test": "node src/test.js"
+    "test": "node src/test.js",
+    "test-env": "node scripts/check-env.js",
+    "test-manual": "node scripts/manual-test.js",
+    "debug": "node scripts/debug-bot.js",
+    "setup": "echo Please copy env.example to .env and fill in your credentials"
   },
   "keywords": ["twitter", "bot", "ai", "gaming", "automation"],
   "author": "Your Name",
