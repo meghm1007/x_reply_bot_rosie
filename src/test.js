@@ -1,7 +1,18 @@
 // Test file - Use this to test your bot components safely!
 require('dotenv').config();
+const { TwitterApi } = require('twitter-api-v2');
 const { generateGamePrompt, formatThreadForAI, cleanTweetText, testGeminiConnection } = require('./ai-service');
 const { getStats, getRecentReplies, hasRepliedToTweet } = require('./persistence');
+
+// Initialize Twitter client for testing
+const twitterClient = new TwitterApi({
+  appKey: process.env.TWITTER_API_KEY,
+  appSecret: process.env.TWITTER_API_SECRET,
+  accessToken: process.env.TWITTER_ACCESS_TOKEN,
+  accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+});
+
+const rwClient = twitterClient.readWrite;
 
 // Mock thread data for testing
 const mockThreadData = [
@@ -178,6 +189,78 @@ function testEnvironment() {
 }
 
 /**
+ * Test Twitter API connection and permissions
+ */
+async function testTwitterAPI() {
+  console.log('\n🐦 Testing Twitter API Connection...');
+  console.log('=' .repeat(50));
+  
+  try {
+    // Test 1: Check if we can authenticate
+    console.log('🔐 Testing authentication...');
+    const me = await rwClient.v2.me();
+    console.log(`✅ Authenticated as: @${me.data.username} (${me.data.name})`);
+    
+    // Test 2: Check bot username matches
+    const botUsername = process.env.BOT_USERNAME;
+    if (me.data.username.toLowerCase() === botUsername.toLowerCase()) {
+      console.log('✅ Bot username matches authenticated account');
+    } else {
+      console.log(`⚠️  Bot username mismatch! Expected: @${botUsername}, Got: @${me.data.username}`);
+    }
+    
+    // Test 3: Try to get mentions (this is what's failing)
+    console.log('📬 Testing mentions API...');
+    const mentions = await rwClient.v2.userMentionTimeline(me.data.id, {
+      max_results: 5,
+      'tweet.fields': ['conversation_id', 'created_at', 'author_id', 'text'],
+      'user.fields': ['username'],
+      expansions: ['author_id']
+    });
+    
+    console.log('🔍 Mentions API response structure:');
+    console.log('- Has data property:', mentions.hasOwnProperty('data'));
+    console.log('- Data type:', typeof mentions.data);
+    console.log('- Data value:', mentions.data);
+    console.log('- Has meta property:', mentions.hasOwnProperty('meta'));
+    console.log('- Meta:', mentions.meta);
+    
+    if (mentions.data && Array.isArray(mentions.data)) {
+      console.log(`✅ Found ${mentions.data.length} mentions`);
+      if (mentions.data.length > 0) {
+        console.log('📝 Sample mention:', {
+          id: mentions.data[0].id,
+          text: mentions.data[0].text.substring(0, 50) + '...',
+          author_id: mentions.data[0].author_id
+        });
+      }
+    } else if (!mentions.data) {
+      console.log('ℹ️  No mentions found (this is normal if you haven\'t been mentioned recently)');
+    }
+    
+    console.log('✅ Twitter API connection test completed successfully!');
+    
+  } catch (error) {
+    console.error('❌ Twitter API test failed:', error.message);
+    
+    if (error.code === 401) {
+      console.log('💡 Authentication failed. Check your Twitter API credentials:');
+      console.log('   - API Key and Secret');
+      console.log('   - Access Token and Secret');
+      console.log('   - Make sure tokens match the same app');
+    } else if (error.code === 403) {
+      console.log('💡 Permission denied. Make sure your Twitter app has:');
+      console.log('   - Read and Write permissions');
+      console.log('   - User authentication settings enabled');
+    } else if (error.code === 429) {
+      console.log('💡 Rate limit hit. This is normal - wait 15 minutes and try again');
+    } else {
+      console.log('🔍 Full error details:', error);
+    }
+  }
+}
+
+/**
  * Run all tests
  */
 async function runAllTests() {
@@ -186,6 +269,9 @@ async function runAllTests() {
   
   // Test environment first
   testEnvironment();
+  
+  // Test Twitter API connection
+  await testTwitterAPI();
   
   // Test individual components
   testTextCleaning();
@@ -214,6 +300,7 @@ module.exports = {
   testThreadFormatting,
   testPersistence,
   testEnvironment,
+  testTwitterAPI,
   runAllTests,
   mockThreadData,
   mockTechThreadData

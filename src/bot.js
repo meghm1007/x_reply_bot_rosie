@@ -43,7 +43,27 @@ class RosebudBot {
         }
       );
 
-      if (!mentions.data || mentions.data.length === 0) {
+      // Debug: Log the full response to understand what we're getting
+      console.log('🔍 Debug - API Response:', JSON.stringify(mentions, null, 2));
+
+      // Better error handling for undefined or missing data
+      if (!mentions) {
+        console.log('❌ API returned no response');
+        return;
+      }
+
+      if (!mentions.data) {
+        console.log('📭 No mentions data in response (this might be normal if no mentions exist)');
+        console.log('📊 Response meta:', mentions.meta);
+        return;
+      }
+
+      if (!Array.isArray(mentions.data)) {
+        console.log('❌ Mentions data is not an array:', typeof mentions.data);
+        return;
+      }
+
+      if (mentions.data.length === 0) {
         console.log('📭 No new mentions found');
         return;
       }
@@ -63,6 +83,7 @@ class RosebudBot {
         console.log('💡 This is normal for free tier - bot will retry later');
       } else {
         console.error('❌ Error checking mentions:', error.message);
+        console.error('🔍 Full error details:', error);
       }
     }
   }
