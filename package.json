@@ -1,0 +1,28 @@
+{
+  "name": "rosebud-x-bot",
+  "version": "1.0.0",
+  "description": "X bot that generates game prompts when tagged in threads",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "dev": "nodemon src/bot.js",
+    "test": "node src/test.js"
+  },
+  "keywords": ["twitter", "bot", "ai", "gaming", "automation"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "twitter-api-v2": "^1.15.2",
+    "@google/generative-ai": "^0.2.1",
+    "dotenv": "^16.3.1",
+    "node-cron": "^3.0.3",
+    "fs-extra": "^11.1.1",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 
