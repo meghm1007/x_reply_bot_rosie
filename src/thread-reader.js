@@ -25,23 +25,52 @@ async function readFullThread(conversationId) {
       return [];
     }
 
+    // First, try to get the original tweet that started the conversation
+    let allTweets = [];
+    
+    try {
+      const originalTweet = await client.v2.singleTweet(conversationId, {
+        'tweet.fields': ['created_at', 'author_id', 'text', 'public_metrics'],
+        'user.fields': ['username', 'name'],
+        expansions: ['author_id']
+      });
+      
+      if (originalTweet.data) {
+        allTweets.push({
+          ...originalTweet.data,
+          isOriginal: true
+        });
+        console.log(`📍 Found original tweet: "${originalTweet.data.text.substring(0, 50)}..."`);
+      }
+    } catch (originalError) {
+      console.log('⚠️ Could not fetch original tweet, proceeding with search');
+    }
+
     // Get all tweets in the conversation
-    // This is like reading an entire thread from top to bottom
     const tweets = await client.v2.search(`conversation_id:${conversationId}`, {
-      max_results: parseInt(process.env.MAX_THREAD_LENGTH) || 20, // Increased for better context
+      max_results: parseInt(process.env.MAX_THREAD_LENGTH) || 20,
       'tweet.fields': ['created_at', 'author_id', 'text', 'public_metrics', 'referenced_tweets'],
       'user.fields': ['username', 'name'],
       expansions: ['author_id', 'referenced_tweets.id'],
-      sort_order: 'chronological' // Oldest first for proper context
+      sort_order: 'chronological'
     });
 
-    if (!tweets.data || tweets.data.length === 0) {
+    // Combine original tweet with search results
+    if (tweets.data && tweets.data.length > 0) {
+      allTweets = allTweets.concat(tweets.data);
+    }
+
+    if (allTweets.length === 0) {
       console.log('📭 No tweets found in conversation');
       return [];
     }
 
-    // Process and clean the tweets
-    const processedTweets = processTweets(tweets.data, tweets.includes);
+    // Remove duplicates and process tweets
+    const uniqueTweets = allTweets.filter((tweet, index, self) => 
+      index === self.findIndex(t => t.id === tweet.id)
+    );
+    
+    const processedTweets = processTweets(uniqueTweets, tweets.includes);
     
     console.log(`✅ Successfully read ${processedTweets.length} tweets from thread`);
     return processedTweets;

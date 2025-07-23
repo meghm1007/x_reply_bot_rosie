@@ -88,6 +88,7 @@ class RosebudBot {
         const resetTime = new Date(error.rateLimit.reset * 1000);
         console.log(`⏰ Rate limit resets at: ${resetTime.toLocaleTimeString()}`);
         console.log('💡 This is normal for free tier - bot will retry later');
+        // Don't exit, just continue with normal schedule
       } else {
         console.error('❌ Error checking mentions:', error.message);
         console.error('🔍 Full error details:', error);
@@ -107,6 +108,13 @@ class RosebudBot {
       // Get author info from includes
       const author = includes?.users?.find(user => user.id === mention.author_id);
       const authorName = author ? `@${author.username}` : 'someone';
+      
+      // CRITICAL: Check if the bot is actually mentioned in this tweet
+      const botMentioned = mention.text.toLowerCase().includes(`@${this.botUsername.toLowerCase()}`);
+      if (!botMentioned) {
+        console.log(`⏭️ Bot not actually mentioned in tweet ${mention.id}: "${mention.text}"`);
+        return;
+      }
       
       console.log(`📝 Processing mention from ${authorName}: "${mention.text}"`);
 
