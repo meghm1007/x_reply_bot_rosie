@@ -90,7 +90,9 @@ Generate a single, complete game prompt that's under 280 characters:`;
  */
 function formatThreadForAI(threadContext) {
   if (!threadContext || threadContext.length === 0) {
-    return "No context available.";
+    // Instead of returning "No context available", provide a generic conversation context
+    // This ensures the AI still generates a proper game prompt
+    return "Twitter Conversation Thread:\nGeneral conversation: Someone is asking for a game idea.\n\nKEY CONTEXT: Create a fun, engaging game prompt that encourages interaction.";
   }
 
   // Sort tweets chronologically to understand conversation flow
