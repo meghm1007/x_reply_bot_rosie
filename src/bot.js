@@ -172,46 +172,60 @@ class RosebudBot {
 
   // Add Rosebud AI link to the game prompt
   addRosebudLink(gamePrompt) {
-    const TWITTER_LIMIT = 280;
-    const MIN_PROMPT_CHARS = 80; // Ensure at least 80 characters of game prompt are visible
+    // Simple, effective approach: guarantee users see at least 120 characters of the prompt
+    // URL will contain the full prompt for Rosebud functionality
     
-    // Try different URL formats based on length constraints
+    const minVisibleChars = 120; // Minimum prompt text user should see
     const encodedPrompt = encodeURIComponent(gamePrompt);
     const fullUrl = `https://rosebud.ai/?prompt=${encodedPrompt}`;
     
-    // Strategy 1: Full prompt + "Build this game:" + URL
-    const fullFormat = `${gamePrompt}\n\nBuild this game: ${fullUrl}`;
-    if (fullFormat.length <= TWITTER_LIMIT) {
-      return fullFormat;
+    // Try to fit everything first
+    const fullTweet = `${gamePrompt}\n\n${fullUrl}`;
+    if (fullTweet.length <= 280) {
+      return fullTweet;
     }
     
-    // Strategy 2: Full prompt + URL only
-    const simpleFormat = `${gamePrompt}\n\n${fullUrl}`;
-    if (simpleFormat.length <= TWITTER_LIMIT) {
-      return simpleFormat;
+    // If too long, ensure visible prompt is at least minVisibleChars
+    // Calculate space needed for URL and formatting
+    const urlAndFormatting = `\n\n${fullUrl}`;
+    const spaceForPrompt = 280 - urlAndFormatting.length;
+    
+    if (spaceForPrompt >= minVisibleChars) {
+      // We have enough space to show a good portion of the prompt
+      const visiblePrompt = gamePrompt.substring(0, spaceForPrompt - 3) + '...';
+      return `${visiblePrompt}\n\n${fullUrl}`;
     }
     
-    // Strategy 3: Truncated prompt + URL (ensure min 80 chars of prompt visible)
-    const urlPart = `\n\n${fullUrl}`;
-    const availableForPrompt = TWITTER_LIMIT - urlPart.length;
+    // URL is too long, need to truncate the prompt in the URL too
+    // But still show at least minVisibleChars in the visible text
+    const baseUrl = 'https://rosebud.ai/?prompt=';
+    const reservedSpace = minVisibleChars + 4 + baseUrl.length; // prompt + \n\n + base URL
+    const maxEncodedLength = 280 - reservedSpace;
     
-    if (availableForPrompt >= MIN_PROMPT_CHARS) {
-      const truncatedPrompt = gamePrompt.length > availableForPrompt 
-        ? gamePrompt.substring(0, availableForPrompt - 3) + '...'
-        : gamePrompt;
-      return `${truncatedPrompt}${urlPart}`;
+    // Find a truncated prompt that fits in the remaining URL space
+    let truncatedForUrl = gamePrompt;
+    let encodedTruncated = encodeURIComponent(truncatedForUrl);
+    
+    // Keep reducing until it fits
+    while (encodedTruncated.length > maxEncodedLength && truncatedForUrl.length > 50) {
+      truncatedForUrl = truncatedForUrl.substring(0, truncatedForUrl.length - 10);
+      encodedTruncated = encodeURIComponent(truncatedForUrl);
     }
     
-    // Strategy 4: If URL is too long, use shorter base URL + truncated prompt
-    const shortUrl = 'https://rosebud.ai/';
-    const shortUrlPart = `\n\nPlay: ${shortUrl}`;
-    const availableForPromptShort = TWITTER_LIMIT - shortUrlPart.length;
+    const truncatedUrl = `${baseUrl}${encodedTruncated}`;
+    const visiblePrompt = gamePrompt.substring(0, minVisibleChars) + 
+      (gamePrompt.length > minVisibleChars ? '...' : '');
     
-    const truncatedPromptShort = gamePrompt.length > availableForPromptShort 
-      ? gamePrompt.substring(0, availableForPromptShort - 3) + '...'
-      : gamePrompt;
+    const result = `${visiblePrompt}\n\n${truncatedUrl}`;
     
-    return `${truncatedPromptShort}${shortUrlPart}`;
+    // Final safety check - if still too long, use basic link
+    if (result.length > 280) {
+      const basicLink = 'https://rosebud.ai/';
+      const emergencyPrompt = gamePrompt.substring(0, 280 - basicLink.length - 4 - 3) + '...';
+      return `${emergencyPrompt}\n\n${basicLink}`;
+    }
+    
+    return result;
   }
 
   // Reply to a tweet with our game prompt
