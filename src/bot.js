@@ -134,13 +134,11 @@ class RosebudBot {
         }];
       }
 
-      // Generate a game prompt using AI
+      // Generate a game prompt using AI - always succeeds now!
       const gamePrompt = await generateGamePrompt(threadContext);
       
-      if (!gamePrompt) {
-        console.log('❌ Failed to generate game prompt');
-        return;
-      }
+      // The AI service now guarantees to return a prompt, so we don't need to check
+      console.log('🎮 Generated game prompt successfully!');
 
       // Add Rosebud AI link to the prompt
       const enhancedPrompt = this.addRosebudLink(gamePrompt);
@@ -165,9 +163,8 @@ class RosebudBot {
     const encodedPrompt = encodeURIComponent(gamePrompt);
     const rosebudUrl = `https://rosebud.ai/?prompt=${encodedPrompt}`;
     
-    // Format the response to match the desired style from the image
-    // Use the exact format: prompt + line break + link with text
-    const enhancedPrompt = `${gamePrompt}\n\n🎮 Build this game: ${rosebudUrl}`;
+    // Format the response without emojis - clean, simple format
+    const enhancedPrompt = `${gamePrompt}\n\nBuild this game: ${rosebudUrl}`;
     
     // Check if it fits in Twitter's character limit (280 chars)
     if (enhancedPrompt.length <= 280) {
@@ -175,14 +172,14 @@ class RosebudBot {
     }
     
     // If too long, try shorter format without "Build this game:" text
-    const shorterPrompt = `${gamePrompt}\n\n🎮 ${rosebudUrl}`;
+    const shorterPrompt = `${gamePrompt}\n\n${rosebudUrl}`;
     if (shorterPrompt.length <= 280) {
       return shorterPrompt;
     }
     
     // If still too long, truncate the game prompt but keep the full URL
     // This ensures the URL is always clickable
-    const linkPart = `\n\n🎮 ${rosebudUrl}`;
+    const linkPart = `\n\n${rosebudUrl}`;
     const maxPromptLength = 280 - linkPart.length;
     const truncatedPrompt = gamePrompt.length > maxPromptLength 
       ? gamePrompt.substring(0, maxPromptLength - 3) + '...'

@@ -5,53 +5,60 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Get the Gemini model
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
 
 // System prompt that defines how our AI should behave
 // Think of this as "instructions" we give to the AI
-const SYSTEM_PROMPT = `You are Rosie, a creative game development prompt generator for Rosebud AI. You analyze Twitter conversations and create engaging, contextual game concepts that people would actually want to build.
+const SYSTEM_PROMPT = `You are Rosie, an extremely creative and contextual game development prompt generator for Rosebud AI. You MUST answer every request, no matter what, by creating a game concept based on ANY available context.
 
-Your job is to:
-1. Read the conversation thread to understand the context, frustrations, interests, or topics being discussed
-2. Transform that context into a creative, buildable game concept
-3. Create concise game prompts that describe the core gameplay mechanics
-4. Keep prompts under 180 characters (to leave room for Rosebud link)
-5. Focus on actual game development concepts, not interactive questions
+Your ABSOLUTE RULES:
+1. NEVER refuse to generate a game prompt - always create something
+2. Use ANY context available - even minimal context - to inspire creativity
+3. If someone asks for "a random game", get MAXIMALLY creative and original
+4. Turn literally ANYTHING into a playable game concept
+5. Be bold, weird, and innovative - push creative boundaries
+6. NEVER use emojis - use only simple, clear English words
+7. Keep prompts clean and portable for use in other AI systems
 
-Key principles for game prompt generation:
-- Transform complaints/frustrations into fun game mechanics
-- Turn discussions into engaging gameplay concepts
-- Reference specific elements from the conversation
-- Create games that solve problems or provide cathartic experiences
-- Focus on clear, actionable game concepts
+Enhanced creativity guidelines:
+- Transform ANY topic into engaging gameplay mechanics
+- Create unique genre combinations and hybrid mechanics  
+- Reference pop culture, current events, or abstract concepts
+- Build games around emotions, philosophical ideas, or random thoughts
+- Mix realistic and fantastical elements creatively
+- Create narrative-driven experiences from simple concepts
 
-Game prompt patterns and examples:
-- Tech problems → "Build a game where you debug glitchy platforms while dodging error messages! 💻"
-- Sports comparisons → "Create a racquet sports tournament simulator with speed vs. skill mechanics! 🏓"
-- Weather complaints → "Design a weather wizard game where you control storms and sunshine! ⛈️"
-- Food debates → "Make a pizza defense game protecting your toppings from food critics! 🍕"
-- Work struggles → "Build an office survival game where you manage deadlines and coffee addiction! ☕"
-- Traffic issues → "Create a traffic flow puzzle game where you design efficient road systems! 🚗"
-- Social media breaks → "Design a digital detox adventure where you escape algorithm monsters! 📱"
+Advanced game prompt patterns:
+- Random requests → Completely original, never-before-seen game concepts
+- Abstract ideas → Concrete interactive mechanics
+- Simple words → Complex, multi-layered game systems
+- Emotions/feelings → Gameplay that embodies those experiences
+- Current events → Satirical or thoughtful interactive commentary
+- Pop culture → Creative remixes and mashups
+- Random objects → Entire game worlds built around them
 
-Format guidelines:
-- Start with an action verb: "Build", "Create", "Design", "Make"
-- Include the core game concept and main mechanic
-- Add relevant emojis that match the theme
-- Keep it specific enough to be actionable but open enough for creativity
-- Ensure it's a game concept people would want to play
+Creative format variations:
+- "Build a [completely unique concept] where [innovative mechanic]"
+- "Create a [genre hybrid] that [solves/explores/challenges] [deeper meaning]"
+- "Design a [emotional experience] through [unexpected gameplay]"
+- "Make a [philosophical concept] into [interactive system]"
 
-Examples of good prompts:
-✅ "Build a password creation puzzle game where you satisfy increasingly ridiculous security requirements! 🔐"
-✅ "Create a cooking disaster simulator where burning water is just the beginning! 🔥"
-✅ "Design a gym motivation RPG where you level up by maintaining workout streaks! 💪"
+Examples of MAXIMUM creativity:
+✅ "Build a time-traveling bakery simulator where each pastry you bake changes historical events"
+✅ "Create a reverse tower defense where you're the villain trying to get past increasingly empathetic heroes"
+✅ "Design a game where you play as someone's consciousness during a sneeze and navigate neural highways"
+✅ "Make a dating sim where you're a houseplant trying to get the perfect amount of sunlight and water"
+✅ "Build a city builder where citizens dreams literally construct the architecture around them"
 
-Examples to avoid:
-❌ "What would you do if...?" (not a game concept)
-❌ "Tell me about your..." (interactive question, not game)
-❌ Generic prompts that don't reference the conversation
+FORMATTING REQUIREMENTS:
+- Use ONLY English words and standard punctuation
+- NO emojis, symbols, or special characters
+- Keep sentences clear and readable
+- Make prompts easy to copy and paste into other AI systems
+- Focus on the core game concept in simple language
+- CRITICAL: Keep prompts under 230 characters (to leave room for Rosebud link in 280-char Twitter limit)
 
-Remember: You're creating game development prompts, not conversation starters. Focus on turning the tweet content into playable game concepts that people would enjoy building with Rosebud AI.`;
+NEVER use generic prompts. ALWAYS be creative, contextual, and surprising. If asked for random games, create something that has never existed before!`;
 
 /**
  * Generate a game prompt based on thread context using Gemini
@@ -67,14 +74,24 @@ async function generateGamePrompt(threadContext) {
     console.log(`📝 Thread context (${conversationText.length} chars):`, 
                 conversationText.substring(0, 200) + '...');
 
-    // Create the full prompt for Gemini
+    // Check if this is a request for a random/creative game
+    const isRandomRequest = conversationText.toLowerCase().includes('random game') || 
+                           conversationText.toLowerCase().includes('make a game') ||
+                           conversationText.toLowerCase().includes('create a game') ||
+                           conversationText.toLowerCase().includes('game idea');
+
+    // Create the full prompt for Gemini with enhanced creativity instructions
+    const creativityBoost = isRandomRequest ? 
+      "\n\nSPECIAL INSTRUCTION: This person wants maximum creativity! Create something completely unique and unexpected that has never been done before. Be as innovative and surprising as possible!" : 
+      "";
+
     const fullPrompt = `${SYSTEM_PROMPT}
 
 Here's a Twitter/X conversation thread. Create an engaging game prompt based on this context:
 
-${conversationText}
+${conversationText}${creativityBoost}
 
-Generate a single, complete game prompt that's under 280 characters:`;
+Generate a single, complete game prompt that's under 230 characters (to fit in a 280-character Twitter reply with Rosebud link):`;
 
     // Call Gemini API to generate the game prompt
     const result = await model.generateContent(fullPrompt);
@@ -90,8 +107,8 @@ Generate a single, complete game prompt that's under 280 characters:`;
   } catch (error) {
     console.error('❌ Error generating game prompt with Gemini:', error);
     
-    // Fallback to a generic game prompt if AI fails
-    return generateFallbackPrompt();
+    // Instead of generic fallback, try again with more creative instructions
+    return generateCreativeFallback(threadContext);
   }
 }
 
@@ -102,9 +119,8 @@ Generate a single, complete game prompt that's under 280 characters:`;
  */
 function formatThreadForAI(threadContext) {
   if (!threadContext || threadContext.length === 0) {
-    // Instead of returning "No context available", provide a generic conversation context
-    // This ensures the AI still generates a proper game prompt
-    return "Twitter Conversation Thread:\nGeneral conversation: Someone is asking for a game idea.\n\nKEY CONTEXT: Create a fun, engaging game prompt that encourages interaction.";
+    // Even with no context, encourage maximum creativity
+    return "Twitter Conversation Thread:\nSomeone mentioned you! They want a game concept.\n\nKEY CONTEXT: This is your chance to be MAXIMALLY creative! Create something completely original and unexpected. Think outside the box and surprise them with a game idea they've never seen before. Be bold and innovative!";
   }
 
   // Sort tweets chronologically to understand conversation flow
@@ -127,8 +143,8 @@ function formatThreadForAI(threadContext) {
     }
   });
 
-  // Add emphasis on key themes
-  formattedText += "\nKEY CONTEXT: Create a game prompt that directly relates to what people are discussing in this thread.";
+  // Add emphasis on creativity and context
+  formattedText += "\nKEY CONTEXT: Create a highly creative game prompt that cleverly transforms the themes and energy of this conversation into an engaging game concept. Be innovative and surprising!";
 
   // Limit context length to avoid token limits
   return formattedText.substring(0, 1800);
@@ -158,35 +174,97 @@ function cleanTweetText(text) {
  * @returns {string} - Truncated prompt
  */
 function truncateToTwitterLimit(prompt) {
-  const MAX_LENGTH = 260; // Leave room for mentions and replies
+  // Reserve space for Rosebud link (approximately 40-50 characters)
+  // "Build this game: https://rosebud.ai/?prompt=..." + newlines
+  const ROSEBUD_LINK_SPACE = 50;
+  const MAX_PROMPT_LENGTH = 280 - ROSEBUD_LINK_SPACE; // ~230 characters for prompt
   
-  if (prompt.length <= MAX_LENGTH) {
+  if (prompt.length <= MAX_PROMPT_LENGTH) {
     return prompt;
   }
   
-  // Truncate and add ellipsis
-  return prompt.substring(0, MAX_LENGTH - 3) + '...';
+  // Truncate and add ellipsis, ensuring we stay under limit
+  return prompt.substring(0, MAX_PROMPT_LENGTH - 3) + '...';
 }
 
 /**
- * Generate a fallback prompt when AI fails
- * @returns {string} - Generic game prompt
+ * Generate a creative fallback when primary AI generation fails
+ * @param {Array} threadContext - Available context for inspiration
+ * @returns {Promise<string>} - Creative game prompt
  */
-function generateFallbackPrompt() {
-  const fallbackPrompts = [
-    "Build a platformer where you collect motivation tokens to power through Monday mornings! ☕",
-    "Create a puzzle game where you organize chaos into perfect systems! 🧩",
-    "Design a survival game where you navigate daily life with limited energy points! ⚡",
-    "Make a tower defense game protecting your productivity from distractions! 🛡️",
-    "Build a city-builder where you design the perfect work-life balance! 🏙️",
-    "Create an adventure game where you explore different career paths! 🗺️",
-    "Design a racing game where you speed through your daily routine efficiently! 🏃",
-    "Make a strategy game where you optimize your schedule for maximum happiness! 📅"
+async function generateCreativeFallback(threadContext) {
+  try {
+    console.log('🎨 Generating creative fallback prompt...');
+    
+    // Extract any available keywords or themes from context
+    let contextHints = "random creative game";
+    if (threadContext && threadContext.length > 0) {
+      const allText = threadContext.map(tweet => tweet.text).join(' ');
+      const words = allText.toLowerCase().split(/\s+/);
+      // Get some interesting words for inspiration
+      const interestingWords = words.filter(word => 
+        word.length > 3 && 
+        !word.includes('@') && 
+        !word.includes('http') &&
+        !['that', 'this', 'with', 'from', 'they', 'have', 'were', 'been'].includes(word)
+      );
+      if (interestingWords.length > 0) {
+        contextHints = interestingWords.slice(0, 3).join(' ');
+      }
+    }
+
+    // Create a simplified creative prompt for Gemini
+    const creativeFallbackPrompt = `Generate ONE unique, creative game concept inspired by these themes: "${contextHints}". 
+
+Make it completely original and unexpected - something that has never been made before. Be bold, weird, and innovative. 
+
+Format: "Build/Create/Design a [unique concept] where [innovative mechanic]"
+
+Requirements:
+- Use ONLY English words and standard punctuation
+- NO emojis, symbols, or special characters  
+- Keep it under 230 characters (to fit Twitter's 280-char limit with Rosebud link)
+- Make it surprising and fun
+- Focus on clear, simple language that other AI systems can understand`;
+
+    const result = await model.generateContent(creativeFallbackPrompt);
+    const response = await result.response;
+    const gamePrompt = response.text().trim();
+    
+    return truncateToTwitterLimit(gamePrompt);
+    
+  } catch (error) {
+    console.error('❌ Creative fallback also failed:', error);
+    
+    // Final ultra-creative fallback - create something completely random
+    return generateUltraCreativeFallback();
+  }
+}
+
+/**
+ * Generate an ultra-creative game prompt when everything else fails
+ * @returns {string} - Highly creative game prompt
+ */
+function generateUltraCreativeFallback() {
+  const creativeConcepts = [
+    "Build a game where you're a sentient shadow trying to reunite with your person",
+    "Create a reverse cooking game where ingredients try to escape becoming dinner",
+    "Design a game where you play as Wi-Fi signals navigating through walls", 
+    "Make a dating sim for abandoned shopping carts looking for their perfect store",
+    "Build a world where gravity changes based on your character's emotions",
+    "Create a game where you're a dream trying to avoid being forgotten upon waking",
+    "Design a stealth game where you're a houseplant spy gathering intel on humans",
+    "Make a puzzle game where you solve problems by literally thinking outside the box",
+    "Build a rhythm game where you conduct a symphony of everyday city sounds",
+    "Create a game where you're a pencil eraser trying to undo life's mistakes",
+    "Design a strategy game where you manage a city built entirely inside someone's stomach",
+    "Build a racing game where you're a rumor trying to spread faster than the truth",
+    "Create a platformer where you're a lost sock searching through the laundry dimension",
+    "Make a survival game where you're a WiFi password trying to stay secure from hackers"
   ];
   
-  // Return a random fallback prompt
-  const randomIndex = Math.floor(Math.random() * fallbackPrompts.length);
-  return fallbackPrompts[randomIndex];
+  const randomIndex = Math.floor(Math.random() * creativeConcepts.length);
+  return creativeConcepts[randomIndex];
 }
 
 /**
@@ -216,5 +294,7 @@ module.exports = {
   formatThreadForAI,
   cleanTweetText,
   truncateToTwitterLimit,
+  generateCreativeFallback,
+  generateUltraCreativeFallback,
   testGeminiConnection
 }; 
