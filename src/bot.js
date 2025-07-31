@@ -172,33 +172,46 @@ class RosebudBot {
 
   // Add Rosebud AI link to the game prompt
   addRosebudLink(gamePrompt) {
-    // Create a URL with the prompt pre-filled - ensure proper formatting
+    const TWITTER_LIMIT = 280;
+    const MIN_PROMPT_CHARS = 80; // Ensure at least 80 characters of game prompt are visible
+    
+    // Try different URL formats based on length constraints
     const encodedPrompt = encodeURIComponent(gamePrompt);
-    const rosebudUrl = `https://rosebud.ai/?prompt=${encodedPrompt}`;
+    const fullUrl = `https://rosebud.ai/?prompt=${encodedPrompt}`;
     
-    // Format the response without emojis - clean, simple format
-    const enhancedPrompt = `${gamePrompt}\n\nBuild this game: ${rosebudUrl}`;
-    
-    // Check if it fits in Twitter's character limit (280 chars)
-    if (enhancedPrompt.length <= 280) {
-      return enhancedPrompt;
+    // Strategy 1: Full prompt + "Build this game:" + URL
+    const fullFormat = `${gamePrompt}\n\nBuild this game: ${fullUrl}`;
+    if (fullFormat.length <= TWITTER_LIMIT) {
+      return fullFormat;
     }
     
-    // If too long, try shorter format without "Build this game:" text
-    const shorterPrompt = `${gamePrompt}\n\n${rosebudUrl}`;
-    if (shorterPrompt.length <= 280) {
-      return shorterPrompt;
+    // Strategy 2: Full prompt + URL only
+    const simpleFormat = `${gamePrompt}\n\n${fullUrl}`;
+    if (simpleFormat.length <= TWITTER_LIMIT) {
+      return simpleFormat;
     }
     
-    // If still too long, truncate the game prompt but keep the full URL
-    // This ensures the URL is always clickable
-    const linkPart = `\n\n${rosebudUrl}`;
-    const maxPromptLength = 280 - linkPart.length;
-    const truncatedPrompt = gamePrompt.length > maxPromptLength 
-      ? gamePrompt.substring(0, maxPromptLength - 3) + '...'
+    // Strategy 3: Truncated prompt + URL (ensure min 80 chars of prompt visible)
+    const urlPart = `\n\n${fullUrl}`;
+    const availableForPrompt = TWITTER_LIMIT - urlPart.length;
+    
+    if (availableForPrompt >= MIN_PROMPT_CHARS) {
+      const truncatedPrompt = gamePrompt.length > availableForPrompt 
+        ? gamePrompt.substring(0, availableForPrompt - 3) + '...'
+        : gamePrompt;
+      return `${truncatedPrompt}${urlPart}`;
+    }
+    
+    // Strategy 4: If URL is too long, use shorter base URL + truncated prompt
+    const shortUrl = 'https://rosebud.ai/';
+    const shortUrlPart = `\n\nPlay: ${shortUrl}`;
+    const availableForPromptShort = TWITTER_LIMIT - shortUrlPart.length;
+    
+    const truncatedPromptShort = gamePrompt.length > availableForPromptShort 
+      ? gamePrompt.substring(0, availableForPromptShort - 3) + '...'
       : gamePrompt;
     
-    return `${truncatedPrompt}${linkPart}`;
+    return `${truncatedPromptShort}${shortUrlPart}`;
   }
 
   // Reply to a tweet with our game prompt
