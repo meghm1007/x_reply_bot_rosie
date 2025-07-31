@@ -105,6 +105,19 @@ class RosebudBot {
         return;
       }
 
+      // IMPORTANT: Only process tweets from the past 15 minutes (or configured time window)
+      const tweetTime = new Date(mention.created_at);
+      const now = new Date();
+      const timeWindowMinutes = parseInt(process.env.POLL_INTERVAL_MINUTES) || 15;
+      const timeWindowAgo = new Date(now.getTime() - timeWindowMinutes * 60 * 1000);
+      
+      if (tweetTime < timeWindowAgo) {
+        console.log(`⏰ Skipping old tweet ${mention.id} (created ${tweetTime.toLocaleTimeString()}, older than ${timeWindowMinutes} minutes)`);
+        return;
+      }
+      
+      console.log(`✅ Tweet ${mention.id} is recent (created ${tweetTime.toLocaleTimeString()}, within ${timeWindowMinutes} minutes)`);
+
       // Get author info from includes
       const author = includes?.users?.find(user => user.id === mention.author_id);
       const authorName = author ? `@${author.username}` : 'someone';
